@@ -26,7 +26,7 @@ func Search(curr string, iterations int) {
 	h := md5.New()
 	io.WriteString(h, curr)
 	for i := 0; i < 20; i++ {
-		curr = increment(curr)
+		curr = string(increment([]rune(curr)))
 		fmt.Println(curr)
 	}
 	i := 0
@@ -41,7 +41,7 @@ func Search(curr string, iterations int) {
 		if curr == hash {
 			log(i, "MATCH! " + hash)
 		}
-		curr = increment(curr)
+		curr = string(increment([]rune(curr)))
 	}
 	log(i, "finished")
 }
@@ -53,12 +53,26 @@ func log(i int, msg string, args ...interface{}) {
 	fmt.Printf("%d) [%v] %v\n", i, time.Now().Format("2006-01-02 15:04:05 -0700 MST"), msg)
 }
 
-func increment(curr string) string {
-	pos := 31
-	for ; pos >= 0 && curr[pos] == 'f'; pos-- {}
+func increment(runes []rune) []rune {
+	runeCount := len(runes)
+	pos := runeCount - 1
+	for ; pos >= 0 && runes[pos] == 'f'; pos-- {}
 	if pos < 0 {
 		log(-1, "OVERFLOW!")
-		return "00000000000000000000000000000000"
+		return []rune("00000000000000000000000000000000")
 	}
-	return curr
+	for i := pos; i < runeCount; i++ {
+		runes[i] = next(runes[i])
+	}
+	return runes
+}
+
+func next(curr rune) rune {
+	if curr == '9' {
+		return 'a'
+	} else if curr == 'f' {
+		return '0'
+	} else {
+		return curr + 1
+	}
 }
