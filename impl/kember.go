@@ -27,7 +27,7 @@ func Search(curr string, iterations int64) {
 	h := md5.New()
 	i := int64(0)
 	for ; iterations < 0 || i < iterations; i++ {
-		if i % 1000000 == 0 {
+		if i % 10000000 == 0 {
 			log(i, curr)
 		}
 		h.Reset()
@@ -53,11 +53,7 @@ func log(i int64, msg string, args ...interface{}) {
 func increment(runes []rune) {
 	runeCount := len(runes)
 	pos := runeCount - 1
-	for ; pos >= 0 && runes[pos] == 'f'; pos-- {}
-	if pos < 0 {
-		log(-1, "OVERFLOW!")
-		pos = 0
-	}
+	for ; pos > 0 && runes[pos] == 'f'; pos-- {}
 	for i := pos; i < runeCount; i++ {
 		runes[i] = next(runes[i])
 	}
