@@ -21,50 +21,46 @@ func Valid(hash string) bool {
 	return true
 }
 
-func Search(curr string, iterations int) {
+func Search(curr string, iterations int64) {
 	log(0, "search(%v, %v)!", curr, iterations)
+	runes := []rune(curr)
 	h := md5.New()
-	io.WriteString(h, curr)
-	for i := 0; i < 20; i++ {
-		curr = string(increment([]rune(curr)))
-		fmt.Println(curr)
-	}
-	i := 0
+	i := int64(0)
 	for ; iterations < 0 || i < iterations; i++ {
 		if i % 1000000 == 0 {
-			log(i, "...")
+			log(i, curr)
 		}
 		h.Reset()
 		io.WriteString(h, curr)
 		sum := h.Sum(nil)
 		hash := hex.EncodeToString(sum[0:16])
 		if curr == hash {
-			log(i, "MATCH! " + hash)
+			log(i, "%v == %v <-- MATCH!!!", curr, hash)
 		}
-		curr = string(increment([]rune(curr)))
+		increment(runes)
+		curr = string(runes)
 	}
 	log(i, "finished")
 }
 
-func log(i int, msg string, args ...interface{}) {
+func log(i int64, msg string, args ...interface{}) {
 	if len(args) > 0 {
 		msg = fmt.Sprintf(msg, args...)
 	}
-	fmt.Printf("%d) [%v] %v\n", i, time.Now().Format("2006-01-02 15:04:05 -0700 MST"), msg)
+	fmt.Printf("%8.1fM) [%v] %v\n", float64(i) / 1000000.0, time.Now().Format("2006-01-02 15:04:05 -0700 MST"), msg)
 }
 
-func increment(runes []rune) []rune {
+func increment(runes []rune) {
 	runeCount := len(runes)
 	pos := runeCount - 1
 	for ; pos >= 0 && runes[pos] == 'f'; pos-- {}
 	if pos < 0 {
 		log(-1, "OVERFLOW!")
-		return []rune("00000000000000000000000000000000")
+		pos = 0
 	}
 	for i := pos; i < runeCount; i++ {
 		runes[i] = next(runes[i])
 	}
-	return runes
 }
 
 func next(curr rune) rune {

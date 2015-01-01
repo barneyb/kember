@@ -71,7 +71,9 @@ func TestIncrement(t *testing.T) {
     {"ffffffffffffffffffffffffffffffff", "00000000000000000000000000000000"}, // overflow
   }
   for _, c := range cases {
-    got := string(increment([]rune(c.in)))
+    runes := []rune(c.in)
+    increment(runes)
+    got := string(runes)
     if got != c.want {
       t.Errorf("increment(%v) gave %q (want %q)", c.in, got, c.want)
     }
