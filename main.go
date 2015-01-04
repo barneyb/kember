@@ -19,7 +19,7 @@ func main() {
     fmt.Println("The starting hash is invalid.")
   } else {
     log := make(chan kember.StatusUpdate)
-    s := kember.Searcher{ log, *start, *iterations }
+    s := kember.Searcher{ log, 1 * 1000 * 1000, *start, *iterations }
     go kember.Search(&s)
     var msg string
     var su kember.StatusUpdate

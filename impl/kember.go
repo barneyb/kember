@@ -9,6 +9,7 @@ import (
 
 type Searcher struct {
 	Log chan StatusUpdate
+	TickFrequency uint64
 	Start string
 	Iterations uint64
 }
@@ -44,7 +45,7 @@ func Search(gs *Searcher) {
 	runes := []rune(curr)
 	h := md5.New()
 	for ; gs.Iterations == 0 || i < gs.Iterations; i++ {
-		if i % 10000000 == 0 {
+		if i % gs.TickFrequency == 0 {
 			gs.Log <- StatusUpdate{TICK, i, curr}
 		}
 		h.Reset()
