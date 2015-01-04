@@ -15,10 +15,10 @@ func main() {
   iterations := flag.Int64("n", -1, "number of search iterations (-1 means 'forever')")
   // threads := flag.Int("threads", 1, "number of concurrent threads to run")
   flag.Parse()
-  log := make(chan string)
   if ! kember.Valid(*start) {
     fmt.Println("The starting hash is invalid.")
   } else {
+    log := make(chan string)
     s := kember.Searcher{ log, *start, *iterations, 0, *start }
     go kember.Search(&s)
     var msg string
