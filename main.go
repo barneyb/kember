@@ -23,7 +23,6 @@ func main() {
     go kember.Search(&s)
     var msg string
     var su kember.StatusUpdate
-    brk := false
     for ;true; {
       su = <- log
       switch su.Status {
@@ -32,11 +31,10 @@ func main() {
         case kember.MATCH:
           msg = fmt.Sprintf("%v == %v <-- MATCH!!!", su.Curr, su.Curr)
         case kember.DONE:
-          brk = true
           msg = "finished"
       }
       fmt.Printf("%.7s %8.1fM) [%s] %s\n", s.Start, float64(su.I) / 1000000.0, time.Now().Format("2006-01-02 15:04:05 -0700 MST"), msg)
-      if brk {
+      if su.Status == kember.DONE {
         break
       }
     }
