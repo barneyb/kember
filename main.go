@@ -24,7 +24,7 @@ func main() {
     var msg string
     for ;true; {
       msg = <- log
-      fmt.Printf("%8.1fM) [%v] %v\n", float64(s.I) / 1000000.0, time.Now().Format("2006-01-02 15:04:05 -0700 MST"), msg)
+      fmt.Printf("%.7s %8.1fM) [%s] %s\n", s.Start, float64(s.I) / 1000000.0, time.Now().Format("2006-01-02 15:04:05 -0700 MST"), msg)
       if msg == "finished" {
         break
       }
