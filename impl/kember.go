@@ -11,8 +11,6 @@ type Searcher struct {
 	Log chan StatusUpdate
 	Start string
 	Iterations int64
-	I int64
-	Curr string
 }
 
 type Status int
@@ -41,24 +39,25 @@ func Valid(hash string) bool {
 }
 
 func Search(gs *Searcher) {
-	gs.I = int64(0)
-	runes := []rune(gs.Curr)
+	i := int64(0)
+	curr := gs.Start
+	runes := []rune(curr)
 	h := md5.New()
-	for ; gs.Iterations < 0 || gs.I < gs.Iterations; gs.I++ {
-		if gs.I % 10000000 == 0 {
-			gs.Log <- StatusUpdate{TICK, gs.I, gs.Curr}
+	for ; gs.Iterations < 0 || i < gs.Iterations; i++ {
+		if i % 10000000 == 0 {
+			gs.Log <- StatusUpdate{TICK, i, curr}
 		}
 		h.Reset()
-		io.WriteString(h, gs.Curr)
+		io.WriteString(h, curr)
 		sum := h.Sum(nil)
 		hash := hex.EncodeToString(sum[0:16])
-		if gs.Curr == hash {
-			gs.Log <- StatusUpdate{MATCH, gs.I, gs.Curr}
+		if curr == hash {
+			gs.Log <- StatusUpdate{MATCH, i, curr}
 		}
 		increment(runes)
-		gs.Curr = string(runes)
+		curr = string(runes)
 	}
-	gs.Log <- StatusUpdate{DONE, gs.I, gs.Curr}
+	gs.Log <- StatusUpdate{DONE, i, curr}
 }
 
 func increment(runes []rune) {
