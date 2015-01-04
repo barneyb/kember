@@ -2,16 +2,28 @@ package kember
 
 import (
 	"io"
-	"fmt"
 	"strings"
 	"crypto/md5"
 	"encoding/hex"
 )
 
 type Searcher struct {
-	Log chan string
+	Log chan StatusUpdate
 	Start string
 	Iterations int64
+	I int64
+	Curr string
+}
+
+type Status int
+const (
+	TICK Status = iota
+	MATCH
+	DONE
+)
+
+type StatusUpdate struct {
+	Status Status
 	I int64
 	Curr string
 }
@@ -34,19 +46,19 @@ func Search(gs *Searcher) {
 	h := md5.New()
 	for ; gs.Iterations < 0 || gs.I < gs.Iterations; gs.I++ {
 		if gs.I % 10000000 == 0 {
-			gs.Log <- gs.Curr
+			gs.Log <- StatusUpdate{TICK, gs.I, gs.Curr}
 		}
 		h.Reset()
 		io.WriteString(h, gs.Curr)
 		sum := h.Sum(nil)
 		hash := hex.EncodeToString(sum[0:16])
 		if gs.Curr == hash {
-			gs.Log <- fmt.Sprintf("%v == %v <-- MATCH!!!", gs.Curr, hash)
+			gs.Log <- StatusUpdate{MATCH, gs.I, gs.Curr}
 		}
 		increment(runes)
 		gs.Curr = string(runes)
 	}
-	gs.Log <- "finished"
+	gs.Log <- StatusUpdate{DONE, gs.I, gs.Curr}
 }
 
 func increment(runes []rune) {

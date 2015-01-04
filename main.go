@@ -18,14 +18,25 @@ func main() {
   if ! kember.Valid(*start) {
     fmt.Println("The starting hash is invalid.")
   } else {
-    log := make(chan string)
+    log := make(chan kember.StatusUpdate)
     s := kember.Searcher{ log, *start, *iterations, 0, *start }
     go kember.Search(&s)
     var msg string
+    var su kember.StatusUpdate
+    brk := false
     for ;true; {
-      msg = <- log
-      fmt.Printf("%.7s %8.1fM) [%s] %s\n", s.Start, float64(s.I) / 1000000.0, time.Now().Format("2006-01-02 15:04:05 -0700 MST"), msg)
-      if msg == "finished" {
+      su = <- log
+      switch su.Status {
+        case kember.TICK:
+          msg = su.Curr
+        case kember.MATCH:
+          msg = fmt.Sprintf("%v == %v <-- MATCH!!!", su.Curr, su.Curr)
+        case kember.DONE:
+          brk = true
+          msg = "finished"
+      }
+      fmt.Printf("%.7s %8.1fM) [%s] %s\n", s.Start, float64(su.I) / 1000000.0, time.Now().Format("2006-01-02 15:04:05 -0700 MST"), msg)
+      if brk {
         break
       }
     }
