@@ -2,12 +2,19 @@ package kember
 
 import (
 	"io"
-	"time"
 	"fmt"
 	"strings"
 	"crypto/md5"
 	"encoding/hex"
 )
+
+type Searcher struct {
+	Log chan string
+	Start string
+	Iterations int64
+	I int64
+	Curr string
+}
 
 func Valid(hash string) bool {
 	if len(hash) != 32 {
@@ -21,33 +28,26 @@ func Valid(hash string) bool {
 	return true
 }
 
-func Search(curr string, iterations int64) {
-	log(0, "search(%v, %v)!", curr, iterations)
-	runes := []rune(curr)
+func Search(gs *Searcher) {
+	gs.Log <- fmt.Sprintf("search(%v, %v)!", gs.Curr, gs.Iterations)
+	gs.I = int64(0)
+	runes := []rune(gs.Curr)
 	h := md5.New()
-	i := int64(0)
-	for ; iterations < 0 || i < iterations; i++ {
-		if i % 10000000 == 0 {
-			log(i, curr)
+	for ; gs.Iterations < 0 || gs.I < gs.Iterations; gs.I++ {
+		if gs.I % 10000000 == 0 {
+			gs.Log <- gs.Curr
 		}
 		h.Reset()
-		io.WriteString(h, curr)
+		io.WriteString(h, gs.Curr)
 		sum := h.Sum(nil)
 		hash := hex.EncodeToString(sum[0:16])
-		if curr == hash {
-			log(i, "%v == %v <-- MATCH!!!", curr, hash)
+		if gs.Curr == hash {
+			gs.Log <- fmt.Sprintf("%v == %v <-- MATCH!!!", gs.Curr, hash)
 		}
 		increment(runes)
-		curr = string(runes)
+		gs.Curr = string(runes)
 	}
-	log(i, "finished")
-}
-
-func log(i int64, msg string, args ...interface{}) {
-	if len(args) > 0 {
-		msg = fmt.Sprintf(msg, args...)
-	}
-	fmt.Printf("%8.1fM) [%v] %v\n", float64(i) / 1000000.0, time.Now().Format("2006-01-02 15:04:05 -0700 MST"), msg)
+	gs.Log <- "finished"
 }
 
 func increment(runes []rune) {
