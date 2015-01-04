@@ -10,10 +10,10 @@ import (
 type Searcher struct {
 	Log chan StatusUpdate
 	Start string
-	Iterations int64
+	Iterations uint64
 }
 
-type Status int
+type Status uint
 const (
 	TICK Status = iota
 	MATCH
@@ -22,7 +22,7 @@ const (
 
 type StatusUpdate struct {
 	Status Status
-	I int64
+	I uint64
 	Curr string
 }
 
@@ -39,11 +39,11 @@ func Valid(hash string) bool {
 }
 
 func Search(gs *Searcher) {
-	i := int64(0)
+	i := uint64(0)
 	curr := gs.Start
 	runes := []rune(curr)
 	h := md5.New()
-	for ; gs.Iterations < 0 || i < gs.Iterations; i++ {
+	for ; gs.Iterations == 0 || i < gs.Iterations; i++ {
 		if i % 10000000 == 0 {
 			gs.Log <- StatusUpdate{TICK, i, curr}
 		}

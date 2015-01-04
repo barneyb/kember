@@ -12,8 +12,8 @@ import (
 
 func main() {
   start := flag.String("start", randHash(), "hash to start searching from")
-  iterations := flag.Int64("n", -1, "number of search iterations (-1 means 'forever')")
-  // threads := flag.Int("threads", 1, "number of concurrent threads to run")
+  iterations := flag.Uint64("n", 0, "number of search iterations (0 means 'forever')")
+  // threads := flag.Uint("threads", 1, "number of concurrent threads to run")
   flag.Parse()
   if ! kember.Valid(*start) {
     fmt.Println("The starting hash is invalid.")
