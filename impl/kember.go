@@ -29,7 +29,6 @@ func Valid(hash string) bool {
 }
 
 func Search(gs *Searcher) {
-	gs.Log <- fmt.Sprintf("search(%v, %v)!", gs.Curr, gs.Iterations)
 	gs.I = int64(0)
 	runes := []rune(gs.Curr)
 	h := md5.New()
