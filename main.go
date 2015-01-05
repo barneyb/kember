@@ -47,7 +47,7 @@ func main() {
       } else {
         st = randHash()
       }
-      s := kember.Searcher{ log, tickFrequency / uint64(ts), st, *iterations / uint64(ts) }
+      s := kember.Searcher{ log, tickFrequency, st, *iterations / uint64(ts) }
       w := Worker{ &s, 0, false }
       workers = append(workers, &w)
       go kember.Search(&s)
