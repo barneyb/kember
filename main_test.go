@@ -1,4 +1,4 @@
-package kember
+package main
 
 import (
   "testing"
@@ -24,7 +24,7 @@ func TestRunes(t *testing.T) {
   fmt.Println(string([]rune(s)))
 }
 
-func TestValid(t *testing.T) {
+func TestValidHash(t *testing.T) {
   cases := []struct {
     in string
     want bool
@@ -38,7 +38,7 @@ func TestValid(t *testing.T) {
     {"0000000000000000000000000000000.", false},
   }
   for _, c := range cases {
-    got := Valid(c.in)
+    got := validHash(&c.in)
     if got != c.want {
       t.Errorf("Valid(%v) gave %q (want %q)", c.in, got, c.want)
     }
