@@ -10,62 +10,95 @@ import (
   "github.com/barneyb/kember/impl"
 )
 
+const tickFrequency = 1 * 1000 * 1000
+
 type Worker struct {
-  Searcher kember.Searcher
+  Searcher *kember.Searcher
   Ticks uint64
+  Done bool
 }
 
 type StatusUpdate struct {
-  Worker Worker
+  Worker *Worker
   Status kember.Status
   I uint64
   Curr string
 }
 
 func main() {
-  start := flag.String("start", randHash(), "hash to start searching from")
+  rh := randHash()
+  start := flag.String("start", rh, "hash to start searching from")
   iterations := flag.Uint64("n", 0, "number of search iterations (0 means 'forever')")
-  // threads := flag.Uint("threads", 1, "number of concurrent threads to run")
+  threads := flag.Int("w", 1, "number of concurrent workers to run")
   flag.Parse()
   if ! kember.Valid(*start) {
     fmt.Println("The starting hash is invalid.")
+  } else if *threads < 1 {
+    fmt.Println("At least one thread must be used.")
   } else {
     updates := make(chan StatusUpdate)
-    total := float64(0)
-    workers := 0
+    workers := make([]*Worker, 0, *threads)
 
 
 
-      workers++
+    ts := *threads
+    for i := 0; i < ts; i++ {
       log := make(chan kember.StatusUpdate)
-      s := kember.Searcher{ log, 1 * 1000 * 1000, *start, *iterations }
-      w := Worker{ s, 0 }
+      var st string
+      if i == 0 || *start != rh {
+        st = *start
+      } else {
+        st = randHash()
+      }
+      s := kember.Searcher{ log, tickFrequency / uint64(ts), st, *iterations / uint64(ts) }
+      w := Worker{ &s, 0, false }
+      workers = append(workers, &w)
       go kember.Search(&s)
       go func() {
-        for {
+        for ! w.Done {
           su := <- log
-          updates <- StatusUpdate{w, su.Status, su.I, su.Curr}
+          updates <- StatusUpdate{ &w, su.Status, su.I, su.Curr }
         }
       }()
+    }
 
 
 
     var msg string
-    for workers > 0 {
+    keepGoing := func() bool {
+      for _, w := range workers {
+        if ! w.Done {
+          return true
+        }
+      }
+      return false
+    }
+    totalTicks := func() uint64 {
+      total := uint64(0)
+      for _, w := range workers {
+        total += w.Ticks
+      }
+      return total
+    }
+    lastTotal := uint64(0)
+    for keepGoing() {
       su := <- updates
+      su.Worker.Ticks = su.I
       switch su.Status {
         case kember.TICK:
           msg = su.Curr
         case kember.MATCH:
           msg = fmt.Sprintf("%v == %v <-- MATCH!!!", su.Curr, su.Curr)
         case kember.DONE:
-          workers--
+          su.Worker.Done = true
           msg = "finished"
       }
-      su.Worker.Ticks = su.I
-      i := float64(su.I) / 1000000.0
-      total += i
-      fmt.Printf("%.7s %7.1fM / %7.1fM %s %s\n", su.Worker.Searcher.Start, i, total, time.Now().Format("2006-01-02T15:04:05-0700"), msg)
+      total := totalTicks()
+      // only tick on the aggregate
+      if lastTotal == 0 || (total - lastTotal) >= tickFrequency || total < lastTotal {
+        lastTotal = total
+        fmt.Printf("%.7s %7.1e / %7.1e %s %s\n", su.Worker.Searcher.Start, float64(su.I), float64(total), time.Now().Format("2006-01-02T15:04:05-0700"), msg)
+      }
     }
   }
 }
