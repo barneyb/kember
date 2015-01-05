@@ -10,7 +10,7 @@ import (
   "github.com/barneyb/kember/impl"
 )
 
-const tickFrequency = 1 * 1000 * 1000
+const tickFrequency = 10 * 1000 * 1000
 
 type Worker struct {
   Searcher *kember.Searcher
