@@ -21,7 +21,6 @@ type Worker struct {
 type StatusUpdate struct {
   Worker *Worker
   Status kember.Status
-  I uint64
   Curr string
 }
 
@@ -39,8 +38,6 @@ func main() {
     updates := make(chan StatusUpdate)
     workers := make([]*Worker, 0, *threads)
 
-
-
     ts := *threads
     for i := 0; i < ts; i++ {
       log := make(chan kember.StatusUpdate)
@@ -55,9 +52,14 @@ func main() {
       workers = append(workers, &w)
       go kember.Search(&s)
       go func() {
-        for ! w.Done {
+        for {
           su := <- log
-          updates <- StatusUpdate{ &w, su.Status, su.I, su.Curr }
+          w.Ticks = su.I
+          updates <- StatusUpdate{ &w, su.Status, su.Curr }
+          if su.Status == kember.DONE {
+            w.Done = true
+            break
+          }
         }
       }()
     }
@@ -83,21 +85,19 @@ func main() {
     lastTotal := uint64(0)
     for keepGoing() {
       su := <- updates
-      su.Worker.Ticks = su.I
-      switch su.Status {
-        case kember.TICK:
-          msg = su.Curr
-        case kember.MATCH:
-          msg = fmt.Sprintf("%v == %v <-- MATCH!!!", su.Curr, su.Curr)
-        case kember.DONE:
-          su.Worker.Done = true
-          msg = "finished"
-      }
       total := totalTicks()
-      // only tick on the aggregate
+      // only tick on the aggregate freq
       if lastTotal == 0 || (total - lastTotal) >= tickFrequency || total < lastTotal {
         lastTotal = total
-        fmt.Printf("%.7s %7.1e / %7.1e %s %s\n", su.Worker.Searcher.Start, float64(su.I), float64(total), time.Now().Format("2006-01-02T15:04:05-0700"), msg)
+        switch su.Status {
+          case kember.TICK:
+            msg = su.Curr
+          case kember.MATCH:
+            msg = fmt.Sprintf("%v == %v <-- MATCH!!!", su.Curr, su.Curr)
+          case kember.DONE:
+            msg = "finished"
+        }
+        fmt.Printf("%.7s %7.1e / %7.1e %s %s\n", su.Worker.Searcher.Start, float64(su.Worker.Ticks), float64(total), time.Now().Format("2006-01-02T15:04:05-0700"), msg)
       }
     }
   }
