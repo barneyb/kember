@@ -10,8 +10,13 @@ import (
   "github.com/barneyb/kember/impl"
 )
 
+type Worker struct {
+  Searcher kember.Searcher
+  Ticks uint64
+}
+
 type StatusUpdate struct {
-  Id string
+  Worker Worker
   Status kember.Status
   I uint64
   Curr string
@@ -34,11 +39,12 @@ func main() {
       workers++
       log := make(chan kember.StatusUpdate)
       s := kember.Searcher{ log, 1 * 1000 * 1000, *start, *iterations }
+      w := Worker{ s, 0 }
       go kember.Search(&s)
       go func() {
         for {
           su := <- log
-          updates <- StatusUpdate{*start, su.Status, su.I, su.Curr}
+          updates <- StatusUpdate{w, su.Status, su.I, su.Curr}
         }
       }()
 
@@ -56,9 +62,10 @@ func main() {
           workers--
           msg = "finished"
       }
+      su.Worker.Ticks = su.I
       i := float64(su.I) / 1000000.0
       total += i
-      fmt.Printf("%.7s %7.1fM / %7.1fM %s %s\n", su.Id, i, total, time.Now().Format("2006-01-02T15:04:05-0700"), msg)
+      fmt.Printf("%.7s %7.1fM / %7.1fM %s %s\n", su.Worker.Searcher.Start, i, total, time.Now().Format("2006-01-02T15:04:05-0700"), msg)
     }
   }
 }
