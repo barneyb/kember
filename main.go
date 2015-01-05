@@ -86,12 +86,23 @@ func main() {
     return total
   }
   lastTotal := uint64(0)
+  lastTs := int64(0)
   for keepGoing() {
     su := <- updates
     total := totalTicks()
+    n := total - lastTotal
     // only tick on the aggregate freq
-    if lastTotal == 0 || (total - lastTotal) >= tickFrequency || total < lastTotal {
+    if lastTotal == 0 || n >= tickFrequency || total < lastTotal {
+      ts := time.Now().Unix()
+      perSec := uint64(0)
+      if lastTs > 0 {
+        s := ts - lastTs
+        if s > 0 {
+          perSec = n / uint64(s)
+        }
+      }
       lastTotal = total
+      lastTs = ts
       switch su.Status {
         case kember.TICK:
           msg = su.Curr
@@ -100,7 +111,7 @@ func main() {
         case kember.DONE:
           msg = "finished"
       }
-      fmt.Printf("%.7s %7.1e / %7.1e %s %s\n", su.Worker.Searcher.Start, float64(su.Worker.Ticks), float64(total), time.Now().Format("2006-01-02T15:04:05-0700"), msg)
+      fmt.Printf("%.7s %7.1e / %7.1e %d/s %s %s\n", su.Worker.Searcher.Start, float64(su.Worker.Ticks), float64(total), perSec, time.Now().Format("2006-01-02T15:04:05-0700"), msg)
     }
   }
 }
