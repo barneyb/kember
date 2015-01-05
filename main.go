@@ -31,9 +31,9 @@ func main() {
   threads := flag.Int("w", 1, "number of concurrent workers to run")
   flag.Parse()
   if ! kember.Valid(*start) {
-    fmt.Println("The starting hash is invalid.")
+    panic("The starting hash is invalid.")
   } else if *threads < 1 {
-    fmt.Println("At least one thread must be used.")
+    panic("At least one thread must be used.")
   } else {
     updates := make(chan StatusUpdate)
     workers := make([]*Worker, 0, *threads)
