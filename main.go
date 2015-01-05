@@ -10,6 +10,13 @@ import (
   "github.com/barneyb/kember/impl"
 )
 
+type StatusUpdate struct {
+  Id string
+  Status kember.Status
+  I uint64
+  Curr string
+}
+
 func main() {
   start := flag.String("start", randHash(), "hash to start searching from")
   iterations := flag.Uint64("n", 0, "number of search iterations (0 means 'forever')")
@@ -18,25 +25,40 @@ func main() {
   if ! kember.Valid(*start) {
     fmt.Println("The starting hash is invalid.")
   } else {
-    log := make(chan kember.StatusUpdate)
-    s := kember.Searcher{ log, 1 * 1000 * 1000, *start, *iterations }
-    go kember.Search(&s)
+    updates := make(chan StatusUpdate)
+    total := float64(0)
+    workers := 0
+
+
+
+      workers++
+      log := make(chan kember.StatusUpdate)
+      s := kember.Searcher{ log, 1 * 1000 * 1000, *start, *iterations }
+      go kember.Search(&s)
+      go func() {
+        for {
+          su := <- log
+          updates <- StatusUpdate{*start, su.Status, su.I, su.Curr}
+        }
+      }()
+
+
+
     var msg string
-    var su kember.StatusUpdate
-    for ;true; {
-      su = <- log
+    for workers > 0 {
+      su := <- updates
       switch su.Status {
         case kember.TICK:
           msg = su.Curr
         case kember.MATCH:
           msg = fmt.Sprintf("%v == %v <-- MATCH!!!", su.Curr, su.Curr)
         case kember.DONE:
+          workers--
           msg = "finished"
       }
-      fmt.Printf("%.7s %8.1fM) [%s] %s\n", s.Start, float64(su.I) / 1000000.0, time.Now().Format("2006-01-02 15:04:05 -0700 MST"), msg)
-      if su.Status == kember.DONE {
-        break
-      }
+      i := float64(su.I) / 1000000.0
+      total += i
+      fmt.Printf("%.7s %7.1fM / %7.1fM %s %s\n", su.Id, i, total, time.Now().Format("2006-01-02T15:04:05-0700"), msg)
     }
   }
 }
